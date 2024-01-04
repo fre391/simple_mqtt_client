@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MQTT Example with MQTT.js</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.2.8/mqtt.min.js"></script>
+</head>
+<body>
+  <script>
+    class MqttHandler {
+        constructor() {
+        this.topic = "mf-data";
+        this.data = { data: "test" };
+
+        this.client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt");
+        this.client.on("connect", this.onConnect.bind(this));
+        this.client.on("message", this.onMessageArrived.bind(this));
+        this.client.on("error", this.onError.bind(this));
+        this.client.on("reconnect", this.onReconnect.bind(this));
+        this.client.on("offline", this.onOffline.bind(this));
+      }
+
+
+      onConnect() {
+        console.log("Connected to MQTT broker");
+        this.client.subscribe(this.topic);
+        this.sendDataViaMqtt();
+      }
+
+      onMessageArrived(topic, message) {
+        console.log("Message from MQTT broker arrived");
+        if (topic === this.topic) {
+          let data = JSON.parse(message.toString());
+          console.log("Received Data:", data);
+        }
+      }
+
+      sendDataViaMqtt() {
+        console.log("Publish message to MQTT broker");
+        this.client.publish(this.topic, JSON.stringify(this.data));
+        console.log("Data published to topic/data:", this.data);
+      }
+
+      onError(error) {
+        console.error("Error:", error);
+      }
+
+      onReconnect() {
+        console.log("Reconnecting...");
+      }
+
+      onOffline() {
+        console.log("Client is offline");
+      }
+
+      closeConnection() {
+        this.client.end();
+        console.log("MQTT connection closed");
+      }
+    }
+
+    const mqttHandler = new MqttHandler();
+  </script>
+</body>
+</html>
