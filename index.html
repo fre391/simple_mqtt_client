@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>MQTT Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+  </head>
+
+  <body>
+    <script>
+      class MqttHandler {
+        constructor() {
+          this.topic = "mf-data";
+          this.data = { data:"test" };
+
+          this.host = "test.mosquitto.org";
+          this.port = 8081;
+          this.clientId = `client_${Math.random().toString(16).substr(2, 8)}`;
+          this.client = new Paho.MQTT.Client(this.host, this.port, this.clientId); 
+          this.client.onConnectionLost = this.onConnectionLost.bind(this);
+          this.client.onMessageArrived = this.onMessageArrived.bind(this);
+
+          let connectOptions = {
+            onSuccess: this.onConnect.bind(this),
+            cleanSession: true,
+            useSSL: true,
+          };
+          this.client.connect(connectOptions);
+        }
+
+        onConnect() {
+          console.log("Connected to MQTT broker");
+          this.client.subscribe(this.topic);
+          this.sendDataViaMqtt(); 
+        }
+
+        onConnectionLost(responseObject) {
+          console.log("Connection to MQTT broker lost");
+          if (responseObject.errorCode !== 0) {
+            console.error("Connection lost:", responseObject.errorMessage);
+          }
+        }
+
+        closeConnection() {
+          this.client.disconnect();
+          console.log("MQTT connection closed");
+        }
+
+        onMessageArrived(message) {
+          console.log("Message from MQTT broker arrived");
+          if (message.destinationName === this.topic ) {
+            let data = JSON.parse(message.payloadString);
+            console.log("Received Data:", data);
+          }
+        }
+
+        sendDataViaMqtt() {
+          console.log("Publish message to MQTT broker");
+          const message = new Paho.MQTT.Message(JSON.stringify(this.data));
+          message.destinationName = this.topic;
+          this.client.send(message);
+          console.log("Data published to topic/data:", this.data);
+        }
+
+      }
+
+      const mqttHandler = new MqttHandler();
+      
+    </script>
+  </body>
+</html>
